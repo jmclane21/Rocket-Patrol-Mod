@@ -1,4 +1,4 @@
-class Play extends Phaser.Scene{
+ class Play extends Phaser.Scene{
     constructor(){
         super("playScene")
     }
@@ -40,6 +40,8 @@ class Play extends Phaser.Scene{
         keyLEFT = keyboardInput.addKey(keycode.LEFT)
         keyRIGHT = keyboardInput.addKey(keycode.RIGHT)
 
+        mouse = this.input.activePointer
+
         //init score
         this.p1Score = 0
 
@@ -59,6 +61,10 @@ class Play extends Phaser.Scene{
         this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2, this.p1Score,
             scoreConfig)
 
+        //display highscore
+        this.scoreRight = this.add.text(this.game.config.width - (scoreConfig.fixedWidth + borderUISize + borderPadding), 
+            borderUISize + borderPadding*2, this.game.config.highScore, scoreConfig)
+
         //game over flag
         this.gameOver = false
 
@@ -77,9 +83,16 @@ class Play extends Phaser.Scene{
         //check key input for restart
         if(this.gameOver && Phaser.Input.Keyboard.JustDown(keyRESET)){
             this.scene.restart()
+            if(this.p1Score > this.game.config.highScore){
+                this.game.config.highScore = this.p1Score
+            }
+            
         }
         if(this.gameOver && Phaser.Input.Keyboard.JustDown(keyLEFT)){
             this.scene.start('menuScene')
+            if(this.p1Score > game.config.highScore){
+                this.game.config.highScore = this.p1Score
+            }
         }
 
         this.starfield.tilePositionX -= 4
