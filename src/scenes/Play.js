@@ -32,6 +32,8 @@
         this.ship03 = new Spaceship(this, game.config.width, borderUISize * 6 + borderPadding*4,
             'spaceship', 0, 10).setOrigin(0,0)
 
+        //add explosion particle
+
         //define keys
         let keyboardInput = this.input.keyboard
         let keycode = Phaser.Input.Keyboard.KeyCodes
@@ -51,26 +53,52 @@
             fontSize: '28px',
             backgroundColor: '#F3B141',
             color: '#843605',
+            align: 'left',
+            padding: {
+                top: 5,
+                bottom: 5,
+            }
+        }
+        this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2, 'Score: '+this.p1Score,
+            scoreConfig)
+
+        //display highscore
+        let highScoreConfig = {
+            fontFamily: 'Courier',
+            fontSize: '14px',
+            backgroundColor: '#F3B141',
+            color: '#843605',
+            align: 'left',
+            padding: {
+                top: 5,
+                bottom: 5,
+            }
+        }
+        this.highScoreText = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2 + this.scoreLeft.height, 
+            'High Score: '+this.game.config.highScore, highScoreConfig)
+
+        //display time
+        let timerConfig = {
+            fontFamily: 'Courier',
+            fontSize: '28px',
+            backgroundColor: '#F3B141',
+            color: '#843605',
             align: 'right',
             padding: {
                 top: 5,
                 bottom: 5,
-            },
-            fixedWidth: 100
+            }
         }
-        this.scoreLeft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding*2, this.p1Score,
-            scoreConfig)
-
-        //display highscore
-        this.scoreRight = this.add.text(this.game.config.width - (scoreConfig.fixedWidth + borderUISize + borderPadding), 
-            borderUISize + borderPadding*2, this.game.config.highScore, scoreConfig)
+        this.timerText = this.add.text(this.game.config.width - (borderUISize + borderPadding), 
+            borderUISize + borderPadding*2, this.game.settings.gameTimer/1000, timerConfig)
+        this.timerText.setOrigin(1,0)
 
         //game over flag
         this.gameOver = false
 
         //60 second clock
         scoreConfig.fixedWidth = 0
-        this.clock = this.time.delayedCall(game.settings.gameTimer, () => {
+        clock = this.time.delayedCall(game.settings.gameTimer, () => {
             this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER',
             scoreConfig).setOrigin(0.5)
             this.add.text(game.config.width/2, game.config.height/2 + 64, 'Press (R) to Restart or <- for Menu',
@@ -79,7 +107,7 @@
         }, null, this)
     }
 
-    update(){
+    update(time){
         //check key input for restart
         if(this.gameOver && Phaser.Input.Keyboard.JustDown(keyRESET)){
             this.scene.restart()
@@ -116,6 +144,7 @@
             this.p1Rocket.reset()
             this.shipExplode(this.ship01)
         }
+        this.timerText.setText('Time: ' + ((this.game.settings.gameTimer - clock.elapsed)/1000).toFixed(0))
     }
 
     checkCollision(rocket, ship){
@@ -138,14 +167,27 @@
         let boom = this.add.sprite(ship.x, ship.y, 'explosion').setOrigin(0,0)
         boom.anims.play('explode')          //play the explosion
         boom.on('animationcomplete', () => {//callback function after the animation finishes
-            ship.reset()                    //reset ship posi
-            ship.alpha = 1                  //make ship visible again
             boom.destroy()                  //get rid of the animation
         })
+        const emitter = this.add.particles(ship.x + (ship.width/2), ship.y + (ship.height/2), 'explosion_particle', {
+            speed: {min: 10, max: 50},
+            quantity: 1,
+            duration: 250
+        })
+        emitter.start()
+        emitter.on('complete', () => {
+            ship.reset()                    //reset ship posi
+            ship.alpha = 1                  //make ship visible again
+            emitter.destroy()
+        });
+
         this.p1Score += ship.points
-        this.scoreLeft.text = this.p1Score
+        this.scoreLeft.text = 'Score: '+this.p1Score
+        this.highScoreText.text = 'High Score: '+this.game.config.highScore
 
         this.sound.play('sfx-explosion')
+
+        clock.elapsed-= 1000;
     }
 
 }
